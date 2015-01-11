@@ -2,6 +2,7 @@
   /**
    * Particles is a collection of objects representing events.
    * All keys and string values have a maximum length of 255 characters.
+   * In general, these should only be created ( never deleted or updated ).
    */
   {
     /**
@@ -18,7 +19,7 @@
      * millitimestamp at the time of ID creation.
      * @type {String}(64)
      */
-    "beam": "{X...52}{Y...12}",
+    "beam_id": "{X...52}{Y...12}",
 
     /**
      * The unix timestamp ( in milliseconds ) of when the particle was created.

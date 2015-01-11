@@ -186,15 +186,14 @@ Tetryon.prototype._sendRequest = function (type, data) {
   }
 
   delete data[this.__beamIdKey];
-  requestUrl += encodeURIComponent(this.__beamIdKey) + '=' + encodeURIComponent(this._getBeamId());
-
+  data[this.__beamIdKey] = this._getBeamId();
+  
+  // NOTE - Microsoft limits us to 2083 characters for an entire URL
+  // with only 2048 reserved for the querystring.
+  
   for( key in data ) {
-    requestUrl += '&' + encodeURIComponent(key) + '=' + encodeURIComponent(data[key]);
+    requestUrl += '&' + encodeURIComponent(key.toString().substr(0,255)) + '=' + encodeURIComponent(data[key].toString().substr(0,255));
   }
-
-  // NOTE - Must be less than 2083 characters long.
-  // If necessary we'll make parameters shorter.
-  // Smarter might be to break up into two or more requests...
 
   var requestImage = new Image();
   requestImage.src = requestUrl;
@@ -206,15 +205,16 @@ Tetryon.prototype.sendVisitParticle = function (params) {
 
   data = this._mergeDataObjects(data, this._getUtmData());
   
-  // Specific to, and automatically added for, Visit events.
+  // Specific to, and automatically added for, visit events.
   data['referrer'] = document.referrer;
+  // TODO - Device, OS, Screen Size, Window Size, etc.
 
   // Reserved Values
   data[this.__keyPrefix + 'Event'] = "visit";
   data[this.__keyPrefix + 'Domain'] = document.location.host;
   data[this.__keyPrefix + 'Path'] = document.location.pathname;
   
-  this._sendRequest(data);
+  this._sendRequest('particle', data);
 }
 
 Tetryon.prototype.sendEventParticle = function (event, params) {
@@ -225,15 +225,20 @@ Tetryon.prototype.sendEventParticle = function (event, params) {
   data[this.__keyPrefix + 'Domain'] = document.location.host;
   data[this.__keyPrefix + 'Path'] = document.location.pathname;
 
-  this._sendRequest(data);
+  this._sendRequest('particle', data);
 }
 
-/*
-Tetryon.prototype.identifyBeam = function (params) {
 
+Tetryon.prototype.sendBeamIdentifier = function (identifier, params) {
+  var data = this._mergeDataObjects({}, params);
+
+  data[this.__keyPrefix + 'Identifier'] = identifier;
+
+  this._sendRequest('beam', data);
 }
 
 Tetryon.prototype.sendBeamInformation = function (params) {
-  
+  var data = this._mergeDataObjects({}, params);
+
+  this._sendRequest('beam', data);
 }
-*/
