@@ -63,10 +63,13 @@ var Tetryon = function (config) {
   }
 
   this.__keyPrefix = '_ttyn';
-  this.__beamIdKey = this.__keyPrefix + 'Beam';
+  this.__beamKey = this.__keyPrefix + 'Beam';
+  this.__requestKey = this.__keyPrefix + 'Request';
 
   this.__particleEndpoint = 'particle';
   this.__beamEndpoint = 'beam';
+
+  this.__requestCharLimit = 2000;
 }
 
 /**
@@ -89,6 +92,31 @@ Tetryon.prototype._generateBeamId = function () {
 
   return id;
 }
+
+/**
+ * Generate a mildly unique, 24 character ID.
+ * @return {String} 
+ */
+Tetryon.prototype._generateRequestId = function () {
+  var source = "abcdefghijklmnopqrstuvwxyz00123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+  for( var id = ""; id.length < 12; ) {
+    id += source[Math.floor(Math.random() * source.length)];
+  }
+
+  var timeSalt = Date.now().toString(36);
+  for( ; timeSalt.length < 12 ; ) {
+    timeSalt = '0'+timeSalt;
+  }
+
+  id = id + timeSalt;
+
+  return id;
+}
+
+Tetryon.prototype._encodeRequestParam = function (id, i, j) {
+  return id + ':' + i + '-' + j;
+} 
 
 // Request ID for multiple requests.
 
@@ -129,13 +157,13 @@ Tetryon.prototype._mergeDataObjects = function (a, b) {
  * @return {String} 
  */
 Tetryon.prototype._getBeamId = function () {
-  if( docCookies.hasItem(this.__beamIdKey) ) {
-    return docCookies.getItem(this.__beamIdKey);
+  if( docCookies.hasItem(this.__beamKey) ) {
+    return docCookies.getItem(this.__beamKey);
   }
 
   var beamId = this._generateBeamId();
 
-  if( ! docCookies.setItem(this.__beamIdKey, beamId, Infinity) ) {
+  if( ! docCookies.setItem(this.__beamKey, beamId, Infinity) ) {
     return false;
   }
 
@@ -185,18 +213,52 @@ Tetryon.prototype._sendRequest = function (type, data) {
     throw "Invalid request type: " + type;
   }
 
-  delete data[this.__beamIdKey];
-  data[this.__beamIdKey] = this._getBeamId();
-  
-  // NOTE - Microsoft limits us to 2083 characters for an entire URL
-  // with only 2048 reserved for the querystring.
-  
+  // These are reserved keys.
+  delete data[this.__beamKey];
+  delete data[this.__requestKey];
+
+  data[this.__beamKey] = this._getBeamId();
+
+  var queryStrings = [];
+  var queryStringIndex = 0;
+
   for( key in data ) {
-    requestUrl += '&' + encodeURIComponent(key.toString().substr(0,255)) + '=' + encodeURIComponent(data[key].toString().substr(0,255));
+    // Convert all keys and parameters to strings and trim to 255
+    var tKey = key.toString().substr(0,255);
+    var tData = data[key].toString().substr(0,255);
+
+    var keyPairLength = encodeURIComponent(tKey).length + encodeURIComponent(tData).length + 2;
+
+    if( queryStrings[queryStringIndex] && 
+        ( queryStrings[queryStringIndex].length + keyPairLength ) > this.__requestCharLimit ) {
+      queryStringIndex++;
+    }
+
+    if( typeof queryStrings[queryStringIndex] === "undefined" ) {
+      queryStrings[queryStringIndex] = '?';
+    } else {
+      queryStrings[queryStringIndex] += '&';
+    }
+
+    queryStrings[queryStringIndex] += encodeURIComponent(tKey);
+    
+    queryStrings[queryStringIndex] += '=' + encodeURIComponent(tData);
   }
 
-  var requestImage = new Image();
-  requestImage.src = requestUrl;
+  // We add a request ID to every call so that no caching happens.
+  var requestId = this._generateRequestId();
+
+  for( var i = 0; i < queryStrings.length; i++ ) {
+    var requestParam = this._encodeRequestParam(requestId, (i + 1), queryStrings.length);
+    queryStrings[i] += '&' + encodeURIComponent(this.__requestKey) + '=' + encodeURIComponent(requestParam);
+  }
+  
+  var requestImages = [];
+  for( var i = 0; i < queryStrings.length; i++ ) {
+    requestImages[i] = new Image();
+    requestImages[i].src = requestUrl + queryStrings[i];
+  }
+
 }
 
 // Internal Request - maybe from init()?
