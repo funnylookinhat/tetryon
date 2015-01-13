@@ -1,0 +1,57 @@
+[
+  /**
+   * Particles is a collection of objects representing events.
+   * All keys and string values have a maximum length of 255 characters.
+   * In general, these should only be created ( never deleted or updated ).
+   */
+  {
+    /**
+     * Unique identifier for each record.
+     * @type {String}(24)
+     */
+    "_id": "54b0b7c68a13a9520a000001",
+
+    /**
+     * Unique identifier for each cookie.
+     * i.e. a beam of particles.
+     * The first 52 characters are randomly generated from a 62 character alphabet.
+     * The last 12 characters are a '0' padded, base 36 encode of the unix 
+     * millitimestamp at the time of ID creation.
+     * @type {String}(64)
+     */
+    "beam_id": "{X...52}{Y...12}",
+
+    /**
+     * The unix timestamp ( in milliseconds ) of when the particle was created.
+     * @type {Unsigned Integer}
+     */
+    "timestamp": 1420913317736,
+
+    /**
+     * The type of event this particle represents.
+     * @type {String}
+     */
+    "event": "visit",
+
+    /**
+     * The domain where the particle was created from.
+     * @type {String}
+     */
+    "domain": "funnylookinhat.com",
+
+    /**
+     * The URI where the particle was created from.
+     * @type {String}
+     */
+    "path": "/some/path",
+    
+    /**
+     * All other information that is sent with the particle ( utm data, etc. )
+     * is stored here in key/value pairs.
+     * All values are strings.
+     */
+    "data": {
+      "someKey": "someValue"
+    }
+  }
+]
