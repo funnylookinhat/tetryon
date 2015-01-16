@@ -83,7 +83,7 @@ var Tetryon = function (config) {
         this._serverUrl.substr(this._serverUrl.indexOf('/'));
     } else {
       this._serverUrl = 
-        "https://" +
+        "http://" +
         this._serverUrl.substr(0,this._serverUrl.indexOf('/')) + 
         ":" + this._serverHttpPort +
         this._serverUrl.substr(this._serverUrl.indexOf('/'));
