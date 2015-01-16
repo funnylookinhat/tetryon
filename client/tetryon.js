@@ -47,8 +47,8 @@ var Tetryon = function (config) {
   this._config = config;
 
   this._serverUrl = this._config.serverUrl
-                     ? this._config.serverUrl
-                     : null;
+                  ? this._config.serverUrl
+                  : null;
 
   if( this._serverUrl !== null ) {
 
@@ -261,8 +261,14 @@ Tetryon.prototype._sendRequest = function (type, data) {
 
 }
 
-// Internal Request - maybe from init()?
-Tetryon.prototype.sendVisitParticle = function (params) {
+/**
+ * Send a event type "visit" particle to log visiting a page.
+ * This will include extra information automatically ( i.e. utm_* parameters,
+ * the domain and path of the current URL, and various device information ).
+ * @param  {Object} params Optional extra parameters that you may add.
+ * @return {Boolean} 
+ */
+Tetryon.prototype.createVisit = function (params) {
   var data = this._mergeDataObjects({}, params);
 
   data = this._mergeDataObjects(data, this._getUtmData());
@@ -277,9 +283,17 @@ Tetryon.prototype.sendVisitParticle = function (params) {
   data[this.__keyPrefix + 'Path'] = document.location.pathname;
   
   this._sendRequest('particle', data);
+
+  return true;
 }
 
-Tetryon.prototype.sendEventParticle = function (event, params) {
+/**
+ * Send an arbitrary particle for this beam.
+ * @param  {String} event  The keyword for this event type, i.e. "checkout" or "visit"
+ * @param  {Object} params Key/Value string pairs to be sent as a payload.
+ * @return {Boolean} 
+ */
+Tetryon.prototype.createEvent = function (event, params) {
   var data = this._mergeDataObjects({}, params);
 
   // Reserved Values
@@ -291,7 +305,7 @@ Tetryon.prototype.sendEventParticle = function (event, params) {
 }
 
 
-Tetryon.prototype.sendBeamIdentifier = function (identifier, params) {
+Tetryon.prototype.identifyBeam = function (identifier, params) {
   var data = this._mergeDataObjects({}, params);
 
   data[this.__keyPrefix + 'Identifier'] = identifier;
@@ -299,7 +313,7 @@ Tetryon.prototype.sendBeamIdentifier = function (identifier, params) {
   this._sendRequest('beam', data);
 }
 
-Tetryon.prototype.sendBeamInformation = function (params) {
+Tetryon.prototype.updateBeam = function (params) {
   var data = this._mergeDataObjects({}, params);
 
   this._sendRequest('beam', data);
