@@ -43,12 +43,27 @@ var docCookies = {
   }
 };
 
+/**
+ * Create a Tetryon instance.
+ * @param {Object} config An object with the following keys:
+ * - serverUrl {String} The URL for the path to the Tetryon server.
+ * - serverHttpPort {String} The port HTTP is running on.
+ * - serverHttpsPort {String} The port HTTPS is running on.
+ */
 var Tetryon = function (config) {
   this._config = config;
 
   this._serverUrl = this._config.serverUrl
                   ? this._config.serverUrl
                   : null;
+
+  this._serverHttpPort = this._config.serverHttpPort
+                       ? this._config.serverHttpPort
+                       : 80;
+
+  this._serverHttpsPort = this._config.serverHttpsPort 
+                        ? this._config.serverHttpsPort
+                        : 443;
 
   if( this._serverUrl !== null ) {
 
@@ -57,7 +72,21 @@ var Tetryon = function (config) {
     }
 
     if( this._serverUrl.indexOf('://') >= 0 ) {
-      this._serverUrl = '//' + this._serverUrl.substr(this._serverUrl.indexOf('://') + 3);
+      this._serverUrl = this._serverUrl.substr(this._serverUrl.indexOf('://') + 3);
+    }
+
+    if( document.location.protocol === "https" ) {
+      this._serverUrl = 
+        "https://" +
+        this._serverUrl.substr(0,this._serverUrl.indexOf('/')) + 
+        ":" + this._serverHttpsPort +
+        this._serverUrl.substr(this._serverUrl.indexOf('/'));
+    } else {
+      this._serverUrl = 
+        "https://" +
+        this._serverUrl.substr(0,this._serverUrl.indexOf('/')) + 
+        ":" + this._serverHttpPort +
+        this._serverUrl.substr(this._serverUrl.indexOf('/'));
     }
 
   }
@@ -259,6 +288,7 @@ Tetryon.prototype._sendRequest = function (type, data) {
     requestImages[i].src = requestUrl + queryStrings[i];
   }
 
+  return true;
 }
 
 /**
@@ -282,9 +312,7 @@ Tetryon.prototype.createVisit = function (params) {
   data[this.__keyPrefix + 'Domain'] = document.location.host;
   data[this.__keyPrefix + 'Path'] = document.location.pathname;
   
-  this._sendRequest('particle', data);
-
-  return true;
+  return this._sendRequest('particle', data);
 }
 
 /**
@@ -301,20 +329,30 @@ Tetryon.prototype.createEvent = function (event, params) {
   data[this.__keyPrefix + 'Domain'] = document.location.host;
   data[this.__keyPrefix + 'Path'] = document.location.pathname;
 
-  this._sendRequest('particle', data);
+  return this._sendRequest('particle', data);
 }
 
-
+/**
+ * Send an internal ID to be applied to the beam for record lookup and association.
+ * @param  {String} identifier The internal ID ( or string, email address, etc. ) to reference this beam.
+ * @param  {Object} params     Additional information you want stored on the beam.
+ * @return {Boolean}
+ */
 Tetryon.prototype.identifyBeam = function (identifier, params) {
   var data = this._mergeDataObjects({}, params);
 
   data[this.__keyPrefix + 'Identifier'] = identifier;
 
-  this._sendRequest('beam', data);
+  return this._sendRequest('beam', data);
 }
 
+/**
+ * Update a beam with information.
+ * @param  {Object} params     Additional information you want stored on the beam.
+ * @return {Boolean}
+ */
 Tetryon.prototype.updateBeam = function (params) {
   var data = this._mergeDataObjects({}, params);
 
-  this._sendRequest('beam', data);
+  return this._sendRequest('beam', data);
 }
