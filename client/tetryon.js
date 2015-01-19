@@ -75,7 +75,7 @@ var Tetryon = function (config) {
       this._serverUrl = this._serverUrl.substr(this._serverUrl.indexOf('://') + 3);
     }
 
-    if( document.location.protocol === "https" ) {
+    if( document.location.protocol === "https:" ) {
       this._serverUrl = 
         "https://" +
         this._serverUrl.substr(0,this._serverUrl.indexOf('/')) + 
