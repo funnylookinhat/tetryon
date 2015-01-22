@@ -1,0 +1,16 @@
+{
+  "mongodb": {
+    "hostname": "127.0.0.1",
+    "username": "tetryon",
+    "password": "tetryon",
+    "database": "tetryon"
+  },
+  "http": {
+    "port": "80"
+  },
+  "https": {
+    "port": "443",
+    "cert": "cert.pem",
+    "key": "key.pem"
+  }
+}
