@@ -16,37 +16,37 @@ type request struct {
 const prefixKey = "_ttyn"
 const keyId = prefixKey + "Request"
 
-func (req *request) Init(reqType string, reqParams map[string]string) {
+func (r *request) Init(reqType string, reqParams map[string]string) {
 	id, _, total, err := splitRequestId(reqParams[keyId])
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	req.Id = id
-	req.Type = reqType
-	req.ReceivedParts = make(map[int]bool)
-	req.Parameters = make(map[string]string)
+	r.Id = id
+	r.Type = reqType
+	r.ReceivedParts = make(map[int]bool)
+	r.Parameters = make(map[string]string)
 
 	for i := 1; i <= total; i++ {
-		req.ReceivedParts[i] = false
+		r.ReceivedParts[i] = false
 	}
 
-	req.AddParams(reqParams)
+	r.AddParams(reqParams)
 }
 
-func (req *request) AddParams(parameters map[string]string) {
+func (r *request) AddParams(parameters map[string]string) {
 	_, part, _, _ := splitRequestId(parameters[keyId])
 
-	req.ReceivedParts[part] = true
+	r.ReceivedParts[part] = true
 
 	for key, value := range parameters {
-		req.Parameters[key] = value
+		r.Parameters[key] = value
 	}
 }
 
-func (req *request) ReceivedAllParts() bool {
-	for _, received := range req.ReceivedParts {
+func (r *request) ReceivedAllParts() bool {
+	for _, received := range r.ReceivedParts {
 		if !received {
 			return false
 		}
@@ -54,11 +54,15 @@ func (req *request) ReceivedAllParts() bool {
 	return true
 }
 
-// Encoded IDs are in the format:
-// [id]:[part]-[total]
-// [id] identifies the request uniquely
-// [part] is the chunk out of the total expected
-// [total] is the number of chunks expected
+/**
+ * Split an encoded request ID into the ID, part ( of chunks ), and total ( chunks )
+ * Encoded ID format: [id]:[part]-[total]
+ * @param  {string} requestId
+ * @return {string} The ID of the request.
+ * @return {int} The part of the chunks.
+ * @return {int} The total number of chunks expected.
+ * @return {error} An error if not successful.
+ */
 func splitRequestId(encodedId string) (string, int, int, error) {
 	a := strings.Split(encodedId, ":")
 	b := strings.Split(a[1], "-")

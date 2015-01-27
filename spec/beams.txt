@@ -1,0 +1,33 @@
+{
+  /**
+   * Unique identifier for each cookie.
+   * i.e. a beam of particles.
+   * The first 52 characters are randomly generated from a 62 character alphabet.
+   * The last 12 characters are a '0' padded, base 36 encode of the unix 
+   * millitimestamp at the time of ID creation.
+   * @type {String}(64)
+   */
+  "id": "{X...52}{Y...12}",
+
+  /**
+   * Identifier specific to whatever system you may tie together.
+   * This will be indexed automatically along with beam.
+   * These could be email addresses, internal IDs, etc.
+   * Remember that - as with anything else - these are transported via the 
+   * method that the page was loaded in ( either http or https ) - 
+   * so don't put anything too sensitive in here.
+   * Even server logs technically store a plaintext SSL querystring - but
+   * if you have people poking around there who shouldn't be, you've got other 
+   * problems to worry about.
+   * @type {String}
+   */
+  "identifier": "some_unique_key_from_your_system",
+
+  /**
+   * All other information that is stored on the beam.
+   * All values are strings.
+   */
+  "data": {
+    "someKey": "someValue"
+  }
+}

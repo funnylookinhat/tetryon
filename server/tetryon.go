@@ -61,6 +61,7 @@ func main() {
 	var mongoSession *mgo.Session
 	var httpServeMux *http.ServeMux
 	var requestParamChannel chan map[string]string
+	var requestReceivedChannel chan request
 
 	if responseGifData, err = loadResponseGif(transparent1x1Gif); err != nil {
 		log.Fatal(err)
@@ -74,8 +75,12 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if requestParamChannel, err = loadParamChannel(); err != nil {
+	if requestReceivedChannel, err = loadRequestReceivedChannel(mongoSession, tetryonConfig); err != nil {
+		log.Fatal(err)
+	}
 
+	if requestParamChannel, err = loadParamChannel(requestReceivedChannel); err != nil {
+		log.Fatal(err)
 	}
 
 	httpServeMux = http.NewServeMux()
@@ -157,13 +162,26 @@ func handleParticleRequest(gifData []byte, requestParamChannel chan map[string]s
 	}
 }
 
-func loadParamChannel() (chan map[string]string, error) {
+func loadRequestReceivedChannel(session *mgo.Session, config *TetryonConfig) (chan request, error) {
+	ch := make(chan request)
+
+	go func() {
+		for receivedRequest := range ch {
+			handleReceivedRequest(receivedRequest, session, config)
+		}
+		close(ch)
+	}()
+
+	return ch, nil
+}
+
+func loadParamChannel(requestReceivedChannel chan request) (chan map[string]string, error) {
 	ch := make(chan map[string]string)
 	activeRequests := make(map[string]*request)
 
 	go func() {
 		for parameters := range ch {
-			handleRequestParameters(parameters, activeRequests)
+			handleRequestParameters(parameters, activeRequests, requestReceivedChannel)
 		}
 		close(ch)
 	}()
@@ -250,7 +268,7 @@ func loadMongoSession(mongoConfig MongoConfig) (*mgo.Session, error) {
 	return session, nil
 }
 
-func handleRequestParameters(parameters map[string]string, activeRequests map[string]*request) {
+func handleRequestParameters(parameters map[string]string, activeRequests map[string]*request, requestReceivedChannel chan request) {
 	id, _, _, _ := splitRequestId(parameters[keyId])
 
 	requestType := parameters[paramsTypeKey]
@@ -263,7 +281,17 @@ func handleRequestParameters(parameters map[string]string, activeRequests map[st
 	}
 
 	if activeRequests[id].ReceivedAllParts() {
+		delete(activeRequests[id].Parameters, paramsTypeKey)
+		requestReceivedChannel <- *activeRequests[id]
 		delete(activeRequests, id)
 		log.Println("Received all parts: " + id + " ( Remaining Requests: " + strconv.FormatInt(int64(len(activeRequests)), 10) + " )")
+	}
+}
+
+func handleReceivedRequest(r request, session *mgo.Session, config *TetryonConfig) {
+	if r.Type == "particle" {
+		p := &particle{}
+		p.Init(r.Parameters)
+		p.Save(session, config)
 	}
 }
