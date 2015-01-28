@@ -1,0 +1,4 @@
+*
+!.gitignore
+!example.config.json
+!generate_cert.go
