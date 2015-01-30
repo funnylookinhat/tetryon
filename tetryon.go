@@ -4,13 +4,15 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
-	"strconv"
+	// "strconv"
 	"time"
 )
 
@@ -50,7 +52,7 @@ type DBStats struct {
 // 1x1 Transparent GIF
 const transparent1x1Gif = "R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
 
-const configFile = "config.json"
+const configFile = "config/config.json"
 
 const paramsTypeKey = "_ttynREQUESTTYPE"
 
@@ -62,6 +64,8 @@ func main() {
 	var httpServeMux *http.ServeMux
 	var requestParamChannel chan map[string]string
 	var requestReceivedChannel chan request
+
+	log.SetPrefix("TETRYON ")
 
 	if responseGifData, err = loadResponseGif(transparent1x1Gif); err != nil {
 		log.Fatal(err)
@@ -103,6 +107,12 @@ func main() {
 			":"+tetryonConfig.HttpConfig.Port,
 			httpServeMux); err != nil {
 			log.Fatal(err)
+		}
+	}()
+
+	go func() {
+		for _ = range time.Tick(30 * time.Minute) {
+			logDatabaseStats(mongoSession)
 		}
 	}()
 
@@ -284,7 +294,7 @@ func handleRequestParameters(parameters map[string]string, activeRequests map[st
 		delete(activeRequests[id].Parameters, paramsTypeKey)
 		requestReceivedChannel <- *activeRequests[id]
 		delete(activeRequests, id)
-		log.Println("Received all parts: " + id + " ( Remaining Requests: " + strconv.FormatInt(int64(len(activeRequests)), 10) + " )")
+		// log.Println("Received all parts: " + id + " ( Remaining Requests: " + strconv.FormatInt(int64(len(activeRequests)), 10) + " )")
 	}
 }
 
@@ -294,4 +304,18 @@ func handleReceivedRequest(r request, session *mgo.Session, config *TetryonConfi
 		p.Init(r.Parameters)
 		p.Save(session, config)
 	}
+}
+
+func logDatabaseStats(session *mgo.Session) {
+	sessionCopy := session.Copy()
+	defer sessionCopy.Close()
+
+	db := sessionCopy.DB("tetryon")
+
+	var dbStats DBStats
+	if err := db.Run(bson.D{{"dbStats", 1}, {"scale", 1}}, &dbStats); err != nil {
+		log.Println(err)
+	}
+
+	log.Println("Database Size: " + fmt.Sprintf("Database Size %0.2f MiB", dbStats.DataSize/1048576))
 }

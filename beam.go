@@ -1,5 +1,7 @@
 package main
 
+/*
+
 import (
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
@@ -11,3 +13,4 @@ type beam struct {
 	Identifier string            `bson:"identifier"`
 	Data       map[string]string `bson:"data"`
 }
+*/

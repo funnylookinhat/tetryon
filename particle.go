@@ -23,13 +23,14 @@ const (
 )
 
 type particle struct {
-	Id        bson.ObjectId     `bson:"_id"`
-	BeamId    string            `bson:"beam_id"`
-	Timestamp int64             `bson:"timestamp"`
-	Event     string            `bson:"event"`
-	Domain    string            `bson:"domain"`
-	Path      string            `bson:"path"`
-	Data      map[string]string `bson:"data"`
+	Id         bson.ObjectId     `bson:"_id"`
+	BeamId     string            `bson:"beam_id"`
+	Identifier string            `bson:"identifier"`
+	Timestamp  int64             `bson:"timestamp"`
+	Event      string            `bson:"event"`
+	Domain     string            `bson:"domain"`
+	Path       string            `bson:"path"`
+	Data       map[string]string `bson:"data"`
 }
 
 // Init Particle
@@ -50,6 +51,7 @@ func (p *particle) Init(params map[string]string) {
 		return
 	}
 	p.BeamId = params[paramBeamId]
+	p.Identifier = params[paramBeamId]
 	delete(params, paramBeamId)
 
 	if _, ok = params[paramEvent]; !ok {
@@ -88,7 +90,7 @@ func (p *particle) Save(session *mgo.Session, config *TetryonConfig) {
 	if err != nil {
 		log.Println(err)
 	} else {
-		log.Println("Saved new particle: " + p.Id.String())
+		// log.Println("Saved new particle: " + p.Id.String())
 	}
 }
 

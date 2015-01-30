@@ -199,7 +199,11 @@ Tetryon.prototype._getDeviceData = function () {
  * Send a request with the attached data.
  * @param  {Object} data 
  */
-Tetryon.prototype._sendRequest = function (type, data) {
+Tetryon.prototype._sendRequest = function (type, data, callback) {
+  if( typeof callback === 'undefined' ) {
+    callback = function() {};
+  }
+
   if( this._serverUrl === null ) {
     throw "Missing serverUrl.";
   }
@@ -259,6 +263,7 @@ Tetryon.prototype._sendRequest = function (type, data) {
   var requestImages = [];
   for( var i = 0; i < queryStrings.length; i++ ) {
     requestImages[i] = new Image();
+    requestImages[i].onload = callback;
     requestImages[i].src = requestUrl + queryStrings[i];
   }
 
@@ -272,7 +277,11 @@ Tetryon.prototype._sendRequest = function (type, data) {
  * @param  {Object} params Optional extra parameters that you may add.
  * @return {Boolean} 
  */
-Tetryon.prototype.createVisit = function (params) {
+Tetryon.prototype.createVisit = function (params, callback) {
+  if( typeof callback === 'undefined' ) {
+    callback = function() {};
+  }
+
   var data = this._mergeDataObjects({}, params);
 
   data = this._mergeDataObjects(data, this._getDeviceData());
@@ -286,7 +295,7 @@ Tetryon.prototype.createVisit = function (params) {
   data[this.__keyPrefix + 'Domain'] = document.location.host;
   data[this.__keyPrefix + 'Path'] = document.location.pathname;
   
-  return this._sendRequest('particle', data);
+  return this._sendRequest('particle', data, callback);
 }
 
 /**
@@ -295,7 +304,11 @@ Tetryon.prototype.createVisit = function (params) {
  * @param  {Object} params Key/Value string pairs to be sent as a payload.
  * @return {Boolean} 
  */
-Tetryon.prototype.createEvent = function (event, params) {
+Tetryon.prototype.createEvent = function (event, params, callback) {
+  if( typeof callback === 'undefined' ) {
+    callback = function() {};
+  }
+
   var data = this._mergeDataObjects({}, params);
 
   // Reserved Values
@@ -303,7 +316,7 @@ Tetryon.prototype.createEvent = function (event, params) {
   data[this.__keyPrefix + 'Domain'] = document.location.host;
   data[this.__keyPrefix + 'Path'] = document.location.pathname;
 
-  return this._sendRequest('particle', data);
+  return this._sendRequest('particle', data, callback);
 }
 
 /**
@@ -312,23 +325,16 @@ Tetryon.prototype.createEvent = function (event, params) {
  * @param  {Object} params     Additional information you want stored on the beam.
  * @return {Boolean}
  */
-Tetryon.prototype.identifyBeam = function (identifier, params) {
+Tetryon.prototype.identifyBeam = function (identifier, params, callback) {
+  if( typeof callback === 'undefined' ) {
+    callback = function() {};
+  }
+
   var data = this._mergeDataObjects({}, params);
 
   data[this.__keyPrefix + 'Identifier'] = identifier;
 
-  return this._sendRequest('beam', data);
-}
-
-/**
- * Update a beam with information.
- * @param  {Object} params     Additional information you want stored on the beam.
- * @return {Boolean}
- */
-Tetryon.prototype.updateBeam = function (params) {
-  var data = this._mergeDataObjects({}, params);
-
-  return this._sendRequest('beam', data);
+  return this._sendRequest('beam', data, callback);
 }
 
 /*

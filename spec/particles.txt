@@ -20,6 +20,22 @@
      * @type {String}(64)
      */
     "beam_id": "{X...52}{Y...12}",
+
+    /**
+     * Identifier specific to whatever system you may tie together.
+     * This will be indexed automatically along with beam.
+     * These could be email addresses, internal IDs, etc.
+     * Remember that - as with anything else - these are transported via the 
+     * method that the page was loaded in ( either http or https ) - 
+     * so don't put anything too sensitive in here.
+     * Even server logs technically store a plaintext SSL querystring - but
+     * if you have people poking around there who shouldn't be, you've got other 
+     * problems to worry about.
+     * This defaults to the beam_id until it is set otherwise.
+     * @type {String}
+     */
+    "identifier": "some_unique_key_from_your_system",
+
     /**
      * The unix timestamp ( in milliseconds ) of when the particle was created.
      * @type {Unsigned Integer}
