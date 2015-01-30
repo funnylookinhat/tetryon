@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
@@ -12,7 +13,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	// "strconv"
 	"time"
 )
 
@@ -52,7 +52,7 @@ type DBStats struct {
 // 1x1 Transparent GIF
 const transparent1x1Gif = "R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
 
-const configFile = "config/config.json"
+const configFile = "config.json"
 
 const paramsTypeKey = "_ttynREQUESTTYPE"
 
@@ -67,11 +67,15 @@ func main() {
 
 	log.SetPrefix("TETRYON ")
 
+	var configPath string
+	flag.StringVar(&configPath, "configpath", "./config", "Path to configuration.")
+	flag.Parse()
+
 	if responseGifData, err = loadResponseGif(transparent1x1Gif); err != nil {
 		log.Fatal(err)
 	}
 
-	if tetryonConfig, err = loadTetryonConfig(configFile); err != nil {
+	if tetryonConfig, err = loadTetryonConfig(configPath); err != nil {
 		log.Fatal(err)
 	}
 
@@ -203,14 +207,19 @@ func loadResponseGif(base64Data string) ([]byte, error) {
 	return base64.StdEncoding.DecodeString(base64Data)
 }
 
-func loadTetryonConfig(configFile string) (*TetryonConfig, error) {
-	tetryonConfigData, err := ioutil.ReadFile(configFile)
+func loadTetryonConfig(configPath string) (*TetryonConfig, error) {
+
+	if configPath[len(configPath)-1:] != "/" {
+		configPath = configPath + "/"
+	}
+
+	tetryonConfigData, err := ioutil.ReadFile(configPath + configFile)
 
 	if err != nil {
 		return nil, err
 	}
 
-	configFileInfo, _ := os.Stat(configFile)
+	configFileInfo, _ := os.Stat(configPath + configFile)
 	configFileMode := configFileInfo.Mode()
 
 	if configFileMode&0x0007 > 0 {
@@ -255,6 +264,14 @@ func loadTetryonConfig(configFile string) (*TetryonConfig, error) {
 		return nil, errors.New("Config error: missing https.key")
 	}
 
+	if tetryonConfig.HttpsConfig.Cert[len(tetryonConfig.HttpsConfig.Cert)-1:] != "/" {
+		tetryonConfig.HttpsConfig.Cert = configPath + tetryonConfig.HttpsConfig.Cert
+	}
+
+	if tetryonConfig.HttpsConfig.Key[len(tetryonConfig.HttpsConfig.Key)-1:] != "/" {
+		tetryonConfig.HttpsConfig.Key = configPath + tetryonConfig.HttpsConfig.Key
+	}
+
 	return &tetryonConfig, nil
 }
 
@@ -294,7 +311,6 @@ func handleRequestParameters(parameters map[string]string, activeRequests map[st
 		delete(activeRequests[id].Parameters, paramsTypeKey)
 		requestReceivedChannel <- *activeRequests[id]
 		delete(activeRequests, id)
-		// log.Println("Received all parts: " + id + " ( Remaining Requests: " + strconv.FormatInt(int64(len(activeRequests)), 10) + " )")
 	}
 }
 
