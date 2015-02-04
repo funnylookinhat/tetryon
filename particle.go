@@ -1,25 +1,15 @@
 package main
 
 import (
+	"fmt"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"log"
 	"time"
 )
 
-// Reserved parameter keys
-// All other keys are put into particle.Data
 const (
-	paramPrefix    = "_ttyn"
-	paramRequestId = paramPrefix + "Request"
-	paramBeamId    = paramPrefix + "Beam"
-	paramEvent     = paramPrefix + "Event"
-	paramDomain    = paramPrefix + "Domain"
-	paramPath      = paramPrefix + "Path"
-)
-
-const (
-	particleCollection = "particles"
+	particleCollectionName = "particles"
 )
 
 type particle struct {
@@ -33,98 +23,141 @@ type particle struct {
 	Data       map[string]string `bson:"data"`
 }
 
+func setupParticlesCollection(session *mgo.Session, config *TetryonConfig) error {
+	var err error
+	var collectionNames []string
+
+	sessionCopy := session.Copy()
+	defer sessionCopy.Close()
+
+	db := sessionCopy.DB(config.MongoConfig.Database)
+
+	collectionNames, err = db.CollectionNames()
+
+	if err != nil {
+		return err
+	}
+
+	for _, collectionName := range collectionNames {
+		if collectionName == particleCollectionName {
+			return nil
+		}
+	}
+
+	particleCollection := db.C(particleCollectionName)
+
+	err = particleCollection.Create(&mgo.CollectionInfo{
+		DisableIdIndex: false,
+		ForceIdIndex:   true,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	err = particleCollection.EnsureIndexKey("beam_id", "identifier", "timestamp", "event")
+
+	if err != nil {
+		return err
+	}
+
+	log.Println("Created new collection: " + particleCollectionName)
+
+	return nil
+}
+
 // Init Particle
-func (p *particle) Init(params map[string]string) {
+func (p *particle) Init(params map[string]string) error {
 	p.Id = bson.NewObjectId()
 	p.Timestamp = time.Now().UTC().Unix()
 
 	var ok bool
 
-	if _, ok = params[paramRequestId]; !ok {
-		log.Println("Particle missing key: " + paramRequestId)
-		return
+	if _, ok = params[paramRequestId]; ok {
+		delete(params, paramRequestId)
 	}
-	delete(params, paramRequestId)
 
 	if _, ok = params[paramBeamId]; !ok {
-		log.Println("Particle missing key: " + paramBeamId)
-		return
+		return fmt.Errorf("Particle missing key: %s", paramBeamId)
 	}
 	p.BeamId = params[paramBeamId]
 	p.Identifier = params[paramBeamId]
 	delete(params, paramBeamId)
 
 	if _, ok = params[paramEvent]; !ok {
-		log.Println("Particle missing key: " + paramEvent)
-		return
+		return fmt.Errorf("Particle missing key: %s", paramEvent)
 	}
 	p.Event = params[paramEvent]
 	delete(params, paramEvent)
 
 	if _, ok = params[paramDomain]; !ok {
-		log.Println("Particle missing key: " + paramDomain)
-		return
+		return fmt.Errorf("Particle missing key: %s", paramDomain)
 	}
 	p.Domain = params[paramDomain]
 	delete(params, paramDomain)
 
 	if _, ok = params[paramPath]; !ok {
-		log.Println("Particle missing key: " + paramPath)
-		return
+		return fmt.Errorf("Particle missing key: %s", paramPath)
 	}
 	p.Path = params[paramPath]
 	delete(params, paramPath)
 
 	// We can set the rest of the parameters to just be in Data
 	p.Data = params
+
+	return nil
 }
 
 // Save Particle
-func (p *particle) Save(session *mgo.Session, config *TetryonConfig) {
+func (p *particle) Save(session *mgo.Session, config *TetryonConfig) error {
 	sessionCopy := session.Copy()
 	defer sessionCopy.Close()
 
-	collection := sessionCopy.DB(config.MongoConfig.Database).C(particleCollection)
+	particleCollection := sessionCopy.DB(config.MongoConfig.Database).C(particleCollectionName)
 
-	err := collection.Insert(p)
+	err := particleCollection.Insert(p)
 	if err != nil {
-		log.Println(err)
-	} else {
-		// log.Println("Saved new particle: " + p.Id.String())
+		return err
 	}
+
+	go func() {
+		p.ApplyBeamInfo(session, config)
+	}()
+
+	return nil
 }
 
-/**
- * Split an encoded request ID into the ID, part ( of chunks ), and total ( chunks )
- * @param  {string} requestId
- * @return {string} The ID of the request.
- * @return {int} The part of the chunks.
- * @return {int} The total number of chunks expected.
- * @return {error} An error if not successful.
- */
-/*
-func splitRequestId(requestId string) (string, int, int, error) {
-	a := strings.Split(requestId, ":")
-	b := strings.Split(a[1], "-")
+func (p *particle) ApplyBeamInfo(session *mgo.Session, config *TetryonConfig) error {
+	sessionCopy := session.Copy()
+	defer sessionCopy.Close()
 
-	id := a[0]
+	particleCollection := sessionCopy.DB(config.MongoConfig.Database).C(particleCollectionName)
 
 	var err error
-	var part int64
-	var total int64
+	var b *beam
 
-	part, err = strconv.ParseInt(b[0], 10, 32)
-
-	if err != nil {
-		return "", 0, 0, err
-	}
-
-	total, err = strconv.ParseInt(b[1], 10, 32)
+	b, err = GetBeamById(p.BeamId, session, config)
 
 	if err != nil {
-		return "", 0, 0, err
+		return err
 	}
 
-	return id, int(part), int(total), nil
+	err = particleCollection.Update(bson.M{"_id": p.Id}, bson.M{"$set": bson.M{"identifier": b.Identifier}})
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
-*/
+
+func (b *beam) ApplyBeamInfo(session *mgo.Session, config *TetryonConfig) error {
+	sessionCopy := session.Copy()
+	defer sessionCopy.Close()
+
+	particleCollection := sessionCopy.DB(config.MongoConfig.Database).C(particleCollectionName)
+
+	_, err := particleCollection.UpdateAll(bson.M{"beam_id": b.BeamId}, bson.M{"$set": bson.M{"identifier": b.Identifier}})
+
+	return err
+}
