@@ -30,6 +30,9 @@ const (
 	paramBeamIdentifier = paramPrefix + "Identifier"
 )
 
+// 1x1 Transparent GIF
+const transparent1x1Gif = "R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+
 func (r *request) Init(reqType string, reqParams map[string]string) {
 	id, _, total, err := splitRequestId(reqParams[paramRequestId])
 

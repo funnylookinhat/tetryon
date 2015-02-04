@@ -19,9 +19,6 @@ type DBStats struct {
 	IndexSize   float64 `bson:"indexSize"`
 }
 
-// 1x1 Transparent GIF
-const transparent1x1Gif = "R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
-
 const configFile = "config.json"
 
 const paramsTypeKey = "_ttynREQUESTTYPE"
@@ -100,10 +97,7 @@ func main() {
 	}()
 
 	// Wait Forever
-	ch := make(chan bool)
-	<-ch
-
-	log.Fatal(mongoSession)
+	select {}
 }
 
 func loadMongoSession(mongoConfig MongoConfig) (*mgo.Session, error) {
