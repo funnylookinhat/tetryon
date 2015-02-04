@@ -144,3 +144,14 @@ func (b *beam) Update(params map[string]string, session *mgo.Session, config *Te
 
 	return nil
 }
+
+func (b *beam) ApplyBeamInfo(session *mgo.Session, config *TetryonConfig) error {
+	sessionCopy := session.Copy()
+	defer sessionCopy.Close()
+
+	particleCollection := sessionCopy.DB(config.MongoConfig.Database).C(particleCollectionName)
+
+	_, err := particleCollection.UpdateAll(bson.M{"beam_id": b.BeamId}, bson.M{"$set": bson.M{"identifier": b.Identifier}})
+
+	return err
+}

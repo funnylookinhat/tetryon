@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"log"
@@ -138,5 +137,5 @@ func logDatabaseStats(session *mgo.Session) {
 		log.Println(err)
 	}
 
-	log.Println(fmt.Sprintf("Database Storage Size: %0.2f MiB , Collections: %0.2f MiB , Indexes: %0.2f MiB", dbStats.StorageSize/1048576, dbStats.DataSize/1048576, dbStats.IndexSize/1048576))
+	log.Printf("Database Storage Size: %0.2f MiB , Collections: %0.2f MiB , Indexes: %0.2f MiB \n", dbStats.StorageSize/1048576, dbStats.DataSize/1048576, dbStats.IndexSize/1048576)
 }
