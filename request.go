@@ -74,26 +74,11 @@ func (r *request) ReceivedAllParts() bool {
 func loadRequestReceivedChannel(session *mgo.Session, config *TetryonConfig) (chan request, error) {
 	ch := make(chan request)
 
-	go func() {
-		for receivedRequest := range ch {
-			handleReceivedRequest(receivedRequest, session, config)
-		}
-		close(ch)
-	}()
-
 	return ch, nil
 }
 
 func loadParamChannel(requestReceivedChannel chan request) (chan map[string]string, error) {
 	ch := make(chan map[string]string)
-	activeRequests := make(map[string]*request)
-
-	go func() {
-		for parameters := range ch {
-			handleRequestParameters(parameters, activeRequests, requestReceivedChannel)
-		}
-		close(ch)
-	}()
 
 	return ch, nil
 }

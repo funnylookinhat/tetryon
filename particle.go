@@ -113,16 +113,20 @@ func (p *particle) Save(session *mgo.Session, config *TetryonConfig) error {
 	sessionCopy := session.Copy()
 	defer sessionCopy.Close()
 
+	var err error
+
 	particleCollection := sessionCopy.DB(config.MongoConfig.Database).C(particleCollectionName)
 
-	err := particleCollection.Insert(p)
+	err = particleCollection.Insert(p)
 	if err != nil {
 		return err
 	}
 
-	go func() {
-		p.ApplyBeamInfo(session, config)
-	}()
+	err = p.ApplyBeamInfo(session, config)
+
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

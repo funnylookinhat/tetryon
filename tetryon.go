@@ -6,6 +6,7 @@ import (
 	"gopkg.in/mgo.v2/bson"
 	"log"
 	"net/http"
+	"runtime"
 	"time"
 )
 
@@ -23,6 +24,9 @@ const configFile = "config.json"
 
 const paramsTypeKey = "_ttynREQUESTTYPE"
 
+const databaseLogIntervalSeconds = 60
+const requestsLogIntervalSeconds = 10
+
 func main() {
 	var err error
 	var responseGifData []byte
@@ -31,6 +35,9 @@ func main() {
 	var httpServeMux *http.ServeMux
 	var requestParamChannel chan map[string]string
 	var requestReceivedChannel chan request
+	var requestsHandled int64 = 0
+
+	runtime.GOMAXPROCS(4)
 
 	log.SetPrefix("TETRYON ")
 
@@ -66,6 +73,25 @@ func main() {
 		log.Fatal(err)
 	}
 
+	for i := 0; i < 10; i++ {
+		go func() {
+			for receivedRequest := range requestReceivedChannel {
+				requestsHandled++
+				handleReceivedRequest(receivedRequest, mongoSession, tetryonConfig)
+			}
+		}()
+	}
+
+	activeRequests := make(map[string]*request)
+
+	for j := 0; j < 10; j++ {
+		go func() {
+			for parameters := range requestParamChannel {
+				handleRequestParameters(parameters, activeRequests, requestReceivedChannel)
+			}
+		}()
+	}
+
 	httpServeMux = http.NewServeMux()
 	httpServeMux.HandleFunc("/beam", handleBeamRequest(responseGifData, requestParamChannel))
 	httpServeMux.HandleFunc("/particle", handleParticleRequest(responseGifData, requestParamChannel))
@@ -91,8 +117,15 @@ func main() {
 
 	go func() {
 		logDatabaseStats(mongoSession)
-		for _ = range time.Tick(30 * time.Minute) {
+		for _ = range time.Tick(databaseLogIntervalSeconds * time.Second) {
 			logDatabaseStats(mongoSession)
+		}
+	}()
+
+	go func() {
+		logRequestsHandled(requestsHandled)
+		for _ = range time.Tick(requestsLogIntervalSeconds * time.Second) {
+			logRequestsHandled(requestsHandled)
 		}
 	}()
 
@@ -131,5 +164,10 @@ func logDatabaseStats(session *mgo.Session) {
 		log.Println(err)
 	}
 
-	log.Printf("Database Storage Size: %0.2f MiB , Collections: %0.2f MiB , Indexes: %0.2f MiB \n", dbStats.StorageSize/1048576, dbStats.DataSize/1048576, dbStats.IndexSize/1048576)
+	log.Printf("Database Size: %0.2f MiB , Collections: %0.2f MiB , Indexes: %0.2f MiB \n", dbStats.StorageSize/1048576, dbStats.DataSize/1048576, dbStats.IndexSize/1048576)
+}
+
+func logRequestsHandled(requests int64) {
+	log.Printf("Total requests: %d", requests)
+	// log.Printf("Total requests: %d Requests per second: %0.2f", requests, math.Floor(float64(requests/seconds)))
 }

@@ -138,9 +138,11 @@ func (b *beam) Update(params map[string]string, session *mgo.Session, config *Te
 		return err
 	}
 
-	go func() {
-		b.ApplyBeamInfo(session, config)
-	}()
+	err = b.ApplyBeamInfo(session, config)
+
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
