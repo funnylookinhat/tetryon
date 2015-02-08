@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"runtime"
+	"sync"
 	"time"
 )
 
@@ -36,8 +37,9 @@ func main() {
 	var requestParamChannel chan map[string]string
 	var requestReceivedChannel chan request
 	var requestsHandled int64 = 0
+	var mutex = &sync.Mutex{}
 
-	runtime.GOMAXPROCS(4)
+	runtime.GOMAXPROCS(runtime.NumCPU() / 2)
 
 	log.SetPrefix("TETRYON ")
 
@@ -87,7 +89,7 @@ func main() {
 	for j := 0; j < 10; j++ {
 		go func() {
 			for parameters := range requestParamChannel {
-				handleRequestParameters(parameters, activeRequests, requestReceivedChannel)
+				handleRequestParameters(parameters, activeRequests, requestReceivedChannel, mutex)
 			}
 		}()
 	}

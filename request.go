@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 type request struct {
@@ -87,10 +88,12 @@ func loadResponseGif(base64Data string) ([]byte, error) {
 	return base64.StdEncoding.DecodeString(base64Data)
 }
 
-func handleRequestParameters(parameters map[string]string, activeRequests map[string]*request, requestReceivedChannel chan request) {
+func handleRequestParameters(parameters map[string]string, activeRequests map[string]*request, requestReceivedChannel chan request, mutex *sync.Mutex) {
 	id, _, _, _ := splitRequestId(parameters[paramRequestId])
 
 	requestType := parameters[paramsTypeKey]
+
+	mutex.Lock()
 
 	if _, ok := activeRequests[id]; ok {
 		activeRequests[id].AddParams(parameters)
@@ -104,6 +107,8 @@ func handleRequestParameters(parameters map[string]string, activeRequests map[st
 		requestReceivedChannel <- *activeRequests[id]
 		delete(activeRequests, id)
 	}
+
+	mutex.Unlock()
 }
 
 func handleReceivedRequest(r request, session *mgo.Session, config *TetryonConfig) error {
