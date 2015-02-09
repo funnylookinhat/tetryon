@@ -41,7 +41,7 @@ func main() {
 
 	runtime.GOMAXPROCS(runtime.NumCPU() / 2)
 
-	log.SetPrefix("TETRYON ")
+	log.SetPrefix("Tetryon ")
 
 	var configPath string
 	flag.StringVar(&configPath, "configpath", "./config", "Path to configuration.")

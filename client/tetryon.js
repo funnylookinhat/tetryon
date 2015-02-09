@@ -277,7 +277,7 @@ Tetryon.prototype._sendRequest = function (type, data, callback) {
  * @param  {Object} params Optional extra parameters that you may add.
  * @return {Boolean} 
  */
-Tetryon.prototype.createVisit = function (params, callback) {
+Tetryon.prototype.createVisitParticle = function (params, callback) {
   if( typeof callback === 'undefined' ) {
     callback = function() {};
   }
@@ -304,7 +304,7 @@ Tetryon.prototype.createVisit = function (params, callback) {
  * @param  {Object} params Key/Value string pairs to be sent as a payload.
  * @return {Boolean} 
  */
-Tetryon.prototype.createEvent = function (event, params, callback) {
+Tetryon.prototype.createParticle = function (event, params, callback) {
   if( typeof callback === 'undefined' ) {
     callback = function() {};
   }
@@ -325,12 +325,12 @@ Tetryon.prototype.createEvent = function (event, params, callback) {
  * @param  {Object} params     Additional information you want stored on the beam.
  * @return {Boolean}
  */
-Tetryon.prototype.identifyBeam = function (identifier, params, callback) {
+Tetryon.prototype.identifyBeam = function (identifier, callback) {
   if( typeof callback === 'undefined' ) {
     callback = function() {};
   }
 
-  var data = this._mergeDataObjects({}, params);
+  var data = {};
 
   data[this.__keyPrefix + 'Identifier'] = identifier;
 
