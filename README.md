@@ -132,3 +132,13 @@ single device or client.
 // Tetryon.prototype.identifyBeam = function (identifier, callback)
 t.identifyBeam("someUniqueIdentifier");
 ```
+
+## Notes on Running
+
+If you are running at extremely high volume, you may need to adjust the security settings on your machine.  Setting a hard and soft file limit maximum of 65535 can be extremely helpful in maintaining a concurrent request state.  On Ubuntu edit /etc/security/limits.conf :
+
+```
+* soft nofile 65535
+
+* hard nofile 65535
+```

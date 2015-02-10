@@ -6,7 +6,7 @@ import (
 	"gopkg.in/mgo.v2/bson"
 	"log"
 	"net/http"
-	"runtime"
+	//"runtime"
 	"sync"
 	"time"
 )
@@ -38,8 +38,6 @@ func main() {
 	var requestReceivedChannel chan request
 	var requestsHandled int64 = 0
 	var mutex = &sync.Mutex{}
-
-	runtime.GOMAXPROCS(runtime.NumCPU() / 2)
 
 	log.SetPrefix("Tetryon ")
 
@@ -75,24 +73,24 @@ func main() {
 		log.Fatal(err)
 	}
 
-	for i := 0; i < 10; i++ {
-		go func() {
-			for receivedRequest := range requestReceivedChannel {
-				requestsHandled++
-				handleReceivedRequest(receivedRequest, mongoSession, tetryonConfig)
-			}
-		}()
-	}
+	// for i := 0; i < 10; i++ {
+	go func() {
+		for receivedRequest := range requestReceivedChannel {
+			requestsHandled++
+			handleReceivedRequest(receivedRequest, mongoSession, tetryonConfig)
+		}
+	}()
+	// }
 
 	activeRequests := make(map[string]*request)
 
-	for j := 0; j < 10; j++ {
-		go func() {
-			for parameters := range requestParamChannel {
-				handleRequestParameters(parameters, activeRequests, requestReceivedChannel, mutex)
-			}
-		}()
-	}
+	// for j := 0; j < 10; j++ {
+	go func() {
+		for parameters := range requestParamChannel {
+			handleRequestParameters(parameters, activeRequests, requestReceivedChannel, mutex)
+		}
+	}()
+	// }
 
 	httpServeMux = http.NewServeMux()
 	httpServeMux.HandleFunc("/beam", handleBeamRequest(responseGifData, requestParamChannel))
