@@ -87,11 +87,11 @@ func loadTetryonConfig(configPath string) (*TetryonConfig, error) {
 		return nil, errors.New("Config error: missing https.key")
 	}
 
-	if tetryonConfig.HttpsConfig.Cert[len(tetryonConfig.HttpsConfig.Cert)-1:] != "/" {
+	if tetryonConfig.HttpsConfig.Cert[0:1] != "/" {
 		tetryonConfig.HttpsConfig.Cert = configPath + tetryonConfig.HttpsConfig.Cert
 	}
 
-	if tetryonConfig.HttpsConfig.Key[len(tetryonConfig.HttpsConfig.Key)-1:] != "/" {
+	if tetryonConfig.HttpsConfig.Key[0:1] != "/" {
 		tetryonConfig.HttpsConfig.Key = configPath + tetryonConfig.HttpsConfig.Key
 	}
 
