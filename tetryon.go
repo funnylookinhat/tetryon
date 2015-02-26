@@ -25,8 +25,8 @@ const configFile = "config.json"
 
 const paramsTypeKey = "_ttynREQUESTTYPE"
 
-const databaseLogIntervalSeconds = 60
-const requestsLogIntervalSeconds = 10
+const databaseLogIntervalSeconds = 720
+const requestsLogIntervalSeconds = 720
 
 func main() {
 	var err error
