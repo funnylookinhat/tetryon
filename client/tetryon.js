@@ -52,6 +52,7 @@ var Tetryon = function (config) {
 
   this.__keyPrefix = '_ttyn';
   this.__beamKey = this.__keyPrefix + 'Beam';
+  this.__identifierKey = this.__keyPrefix + 'Identifier';
   this.__requestKey = this.__keyPrefix + 'Request';
 
   this.__particleEndpoint = 'particle';
@@ -156,6 +157,33 @@ Tetryon.prototype._getBeamId = function () {
   }
 
   return beamId;
+}
+
+/**
+ * Get the identifier currently tied to this client.
+ * If one doesn't exist, it returns the BeamID by default.
+ * @return {String}
+ */
+Tetryon.prototype._getIdentifier = function () {
+  if( docCookies.hasItem(this.__identifierKey) ) {
+    return docCookies.getItem(this.__identifierKey);
+  }
+
+  return this._getBeamId();
+}
+
+/**
+ * Set the identifier for this client.
+ * Returns the identifier as a result.
+ * @param {String} identifier
+ * @return {String}
+ */
+Tetryon.prototype._setIdentifier = function (identifier) {
+  if( ! docCookies.setItem(this.__identifierKey, identifier, Infinity) ) {
+    return this._getBeamId();
+  }
+
+  return this._getIdentifier();
 }
 
 /**
@@ -330,9 +358,13 @@ Tetryon.prototype.identifyBeam = function (identifier, callback) {
     callback = function() {};
   }
 
+  if( this._getIdentifier() == identifier ) {
+    return callback();
+  }
+
   var data = {};
 
-  data[this.__keyPrefix + 'Identifier'] = identifier;
+  data[this.__identifierKey] = this._setIdentifier(identifier);
 
   return this._sendRequest('beam', data, callback);
 }
