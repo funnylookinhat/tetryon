@@ -55,7 +55,7 @@ func setupParticlesCollection(session *mgo.Session, config *TetryonConfig) error
 		return err
 	}
 
-	err = particleCollection.EnsureIndexKey("beam_id", "identifier", "timestamp", "event")
+	err = particleCollection.EnsureIndexKey("beam_id", "identifier", "timestamp", "event", "domain")
 
 	if err != nil {
 		return err
