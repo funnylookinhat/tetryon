@@ -316,7 +316,7 @@ Tetryon.prototype.createVisitParticle = function (params, callback) {
   data = this._mergeDataObjects(data, this._getUtmData());
   
   // Specific to, and automatically added for, visit events.
-  data['referrer'] = document.referrer;
+  data['referer'] = document.referrer;
   
   // Reserved Values
   data[this.__keyPrefix + 'Event'] = "visit";
