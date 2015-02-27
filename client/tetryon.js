@@ -340,7 +340,7 @@ Tetryon.prototype.createParticle = function (event, params, callback) {
   var data = this._mergeDataObjects({}, params);
 
   // Reserved Values
-  data[this.__keyPrefix + 'Event'] = "visit";
+  data[this.__keyPrefix + 'Event'] = event;
   data[this.__keyPrefix + 'Domain'] = document.location.host;
   data[this.__keyPrefix + 'Path'] = document.location.pathname;
 
