@@ -99,7 +99,7 @@ func main() {
 
 	go func() {
 		if err := http.ListenAndServeTLS(
-			":"+tetryonConfig.HttpsConfig.Port,
+			tetryonConfig.HttpsConfig.Hostname+":"+tetryonConfig.HttpsConfig.Port,
 			tetryonConfig.HttpsConfig.Cert,
 			tetryonConfig.HttpsConfig.Key,
 			httpServeMux); err != nil {
@@ -109,7 +109,7 @@ func main() {
 
 	go func() {
 		if err := http.ListenAndServe(
-			":"+tetryonConfig.HttpConfig.Port,
+			tetryonConfig.HttpConfig.Hostname+":"+tetryonConfig.HttpConfig.Port,
 			httpServeMux); err != nil {
 			log.Fatal(err)
 		}

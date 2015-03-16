@@ -21,13 +21,15 @@ type MongoConfig struct {
 }
 
 type HttpConfig struct {
-	Port string `json:"port"`
+	Hostname string `json:"hostname"`
+	Port     string `json:"port"`
 }
 
 type HttpsConfig struct {
-	Port string `json:"port"`
-	Key  string `json:"key"`
-	Cert string `json:"cert"`
+	Hostname string `json:"hostname"`
+	Port     string `json:"port"`
+	Key      string `json:"key"`
+	Cert     string `json:"cert"`
 }
 
 func loadTetryonConfig(configPath string) (*TetryonConfig, error) {
